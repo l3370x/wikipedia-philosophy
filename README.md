@@ -16,6 +16,10 @@ for more information)
 The Philosophy Game, written in Python, lets you do the clicking
 programmatically.
 
+## My Modifications
+
+I have added a simple cache system after forking the project to help it run faster.
+
 ## How it works
 The module does the following:
 

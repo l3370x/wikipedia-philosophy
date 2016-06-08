@@ -131,6 +131,40 @@ def strip_parentheses(string):
 # Deleted every time trace() exits (regardless of how)
 visited = []
 
+
+def is_in_cache(page,end):
+    try:
+        with open("wikiCacheFor"+str(end)+".txt") as cache_file:
+            for line in cache_file:
+                line = line.strip()
+                visited = line.split(",")
+                if page in visited:
+                    return True
+        return False
+    except:
+        return False
+
+
+def cache(visited,end):
+    with open("wikiCacheFor"+str(end)+".txt", "a+") as cache_file:
+        for i,page in enumerate(visited):
+            cache_file.write(page)
+            if i != len(visited) - 1:
+                cache_file.write(",")
+        cache_file.write("\n")
+
+
+def getFromCacheToEnd(page, end):
+    listToEnd = []
+    with open("wikiCacheFor" + str(end) + ".txt") as cache_file:
+        for line in cache_file:
+            line = line.strip()
+            visited = line.split(",")
+            if page in visited:
+                listToEnd = visited[visited.index(page)+1:]
+    return listToEnd
+
+
 def trace(page=None, end='Philosophy', whole_page=False, infinite=False):
     """
     Visit the first non-italicized, not-within-parentheses
@@ -202,12 +236,25 @@ def trace(page=None, end='Philosophy', whole_page=False, infinite=False):
         del visited[:]
         raise MediaWikiError('MediaWiki error', result['error'])
 
+
+
     page = result['parse']['title']
 
     # Detect loop
     if page in visited:
         del visited[:]
         raise LoopException('Loop detected')
+
+    if is_in_cache(page,end) and not infinite:
+        visited.append(page)
+        print(str(page) + " **** found in cache ****")
+        cachedPageToEnd = getFromCacheToEnd(page,end)
+        visited.extend(cachedPageToEnd)
+        for cachedPage in cachedPageToEnd:
+            yield cachedPage
+        cache(visited,end)
+        del visited[:]
+        return
 
     # This makes sure that we don't yield `page` a second time
     # (whole_page = True indicates that `page` has been processed once
@@ -218,6 +265,8 @@ def trace(page=None, end='Philosophy', whole_page=False, infinite=False):
     # This needs to be done AFTER yield title
     # (The only) normal termination
     if not infinite and page == end:
+        visited.append(page)
+        cache(visited,end)
         del visited[:]
         return
 
